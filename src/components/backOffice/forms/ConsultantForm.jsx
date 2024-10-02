@@ -1,8 +1,11 @@
 "use client";
+import SelectInput from "@/components/FormInputs/SelectInput";
 // import ImageInput from "@/components/FormInputs/ImageInput";
 import SubmitButton from "@/components/FormInputs/SubmitButton";
 import TextInput from "@/components/FormInputs/TextInput";
 import ToggleInput from "@/components/FormInputs/ToggleInput";
+import { makePostRequest } from "@/lib/apiRequest";
+import { generateNormalDate } from "@/lib/generateNormalDate";
 // import { makePostRequest, makePutRequest } from "@/lib/apiRequest";
 // import { generateUserCode } from "@/lib/generateUserCode";
 
@@ -14,6 +17,13 @@ export default function ConsultantForm({ user, updateData = {} }) {
   const id = updateData?.consultantProfile?.id ?? "";
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  const joiningDate = updateData?.consultantProfile?.joiningDate
+    ? new Date(updateData.consultantProfile.joiningDate)
+        .toISOString()
+        .split("T")[0] // Convert to YYYY-MM-DD format
+    : ""; // Use empty string if no joining date exists
+
   const {
     register,
     reset,
@@ -23,35 +33,48 @@ export default function ConsultantForm({ user, updateData = {} }) {
   } = useForm({
     defaultValues: {
       isActive: true,
+      joiningDate,
       ...user,
       ...updateData.consultantProfile,
     },
   });
+
   const isActive = watch("isActive");
+
+  const genderOptions = [
+    { value: "MALE", label: "Male" },
+    { value: "FEMALE", label: "Female" },
+    { value: "OTHER", label: "Other" },
+  ];
+
   async function onSubmit(data) {
-    console.log(data);
-    // if (id) {
-    //   // make put request (update)
-    //   console.log(id);
-    //   data.userId = updateData?.id;
-    //   makePutRequest(
-    //     setLoading,
-    //     `api/farmers/${id}`,
-    //     data,
-    //     "Farmer Profile",
-    //     reset
-    //   );
-    //   setImageUrl("");
-    //   router.back();
-    //   console.log("Update Request:", data);
-    // } else {
-    //   // make post request (create)
-    //   console.log("2");
-    //   data.userId = user.id;
-    //   makePostRequest(setLoading, "api/farmers", data, "Farmer Profile", reset);
-    //   setImageUrl("");
-    //   router.push("/login");
-    // }
+    if (id) {
+      // make put request (update)
+      console.log(id);
+      // data.userId = updateData?.id;
+      // makePutRequest(
+      //   setLoading,
+      //   `api/farmers/${id}`,
+      //   data,
+      //   "Farmer Profile",
+      //   reset
+      // );
+      // setImageUrl("");
+      // router.back();
+      // console.log("Update Request:", data);
+    } else {
+      // make post request (create)
+      data.role = "CONSULTANT";
+      console.log("POst Data", data);
+      makePostRequest(
+        setLoading,
+        "api/consultants",
+        data,
+        "Consultant Profile",
+        reset
+      );
+      router.back();
+    }
   }
 
   return (
@@ -66,18 +89,20 @@ export default function ConsultantForm({ user, updateData = {} }) {
           register={register}
           errors={errors}
           className="w-full"
+          disabled={!!id} // Disable if updating
         />
         <TextInput
           label="Contact Number"
-          name="phone"
+          name="contactNumber"
           type="tel"
           register={register}
           errors={errors}
           className="w-full"
+          disabled={!!id} // Disable if updating
         />
         <TextInput
           label="Emergency Contact Number"
-          name="emergencyPhone"
+          name="emergencyContactNumber"
           type="tel"
           register={register}
           errors={errors}
@@ -90,6 +115,16 @@ export default function ConsultantForm({ user, updateData = {} }) {
           register={register}
           errors={errors}
           className="w-full"
+          disabled={!!id} // Disable if updating
+        />
+        <SelectInput
+          label="Gender"
+          name="gender"
+          // register={register}
+          register={register("gender", { required: true })} // Ensure gender is registered
+          errors={errors}
+          className="w-full"
+          options={genderOptions}
         />
         <TextInput
           label="Permanent Address"
@@ -112,6 +147,7 @@ export default function ConsultantForm({ user, updateData = {} }) {
           errors={errors}
           className="w-full"
           type="number"
+          disabled={!!id} // Disable if updating
         />
         <TextInput
           label="CTC Offered"
@@ -120,14 +156,40 @@ export default function ConsultantForm({ user, updateData = {} }) {
           errors={errors}
           className="w-full"
         />
-        <TextInput
+        {/* <TextInput
           label="Joining Date"
           name="joiningDate"
           register={register}
           errors={errors}
           className="w-full"
           type="date"
-        />
+        /> */}
+
+        {id ? (
+          <div className="flex flex-col space-y-2 w-full">
+            <label className="block text-sm font-medium text-black dark:text-white leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70  mb-2 text-md ">
+              Joining Date
+            </label>
+            <span
+              className="flex h-10 w-full border-none bg-gray-300 dark:bg-zinc-600 text-black dark:text-white shadow-input rounded-xl px-3 py-2 text-sm file:border-0 file:bg-transparent
+                    file:text-sm file:font-medium dark:placeholder:text-neutral-300 dark:placeholder-text-neutral-600 
+                    focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-neutral-400 dark:focus-visible:ring-neutral-600 disabled:cursor-not-allowed disabled:opacity-50 dark:shadow-[0px_0px_1px_1px_var(--neutral-700)]
+                    group-hover/input:shadow-none transition duration-400"
+            >
+              {joiningDate}
+            </span>
+          </div>
+        ) : (
+          <TextInput
+            label="Joining Date"
+            name="joiningDate"
+            register={register}
+            errors={errors}
+            className="w-full"
+            type="date"
+          />
+        )}
+
         <ToggleInput
           label="Currently Working"
           name="isActive"
